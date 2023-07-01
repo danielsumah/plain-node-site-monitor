@@ -112,7 +112,63 @@ handlers._users.post = function (data, callback) {
     });
   }
 };
-handlers._users.put = function (data, callback) {};
+
+handlers._users.put = function (data, callback) {
+  //compulsory payload
+  const phone =
+    typeof data.payload.phone == "string" &&
+    data.payload.phone.trim().length === 13
+      ? data.payload.phone.trim()
+      : false;
+
+  // optional payloads
+  const firstName =
+    typeof data.payload.firstName == "string" &&
+    data.payload.firstName.trim().length > 0
+      ? data.payload.firstName.trim()
+      : false;
+  const lastName =
+    typeof data.payload.lastName == "string" &&
+    data.payload.lastName.trim().length > 0
+      ? data.payload.lastName.trim()
+      : false;
+  const password =
+    typeof data.payload.password == "string" &&
+    data.payload.password.trim().length > 0
+      ? data.payload.password.trim()
+      : false;
+
+  if (phone) {
+    // check if user exists
+    _data.read("users", phone, (err, data) => {
+      if (!err && data) {
+        let userDetailsUpdateObject = { ...data };
+        // update user data
+        if (firstName || lastName || password) {
+          if (firstName) {
+            userDetailsUpdateObject.firstName = firstName;
+          }
+          if (lastName) {
+            userDetailsUpdateObject.lastName = lastName;
+          }
+          if (password) {
+            userDetailsUpdateObject.hashedPassword = helpers.hash(password);
+          }
+        }
+        _data.update("users", phone, userDetailsUpdateObject, (err) => {
+          callback(201, { message: "User details have been updated" });
+        });
+      } else {
+        callback(404, { Error: "User does not exist" });
+      }
+    });
+  } else {
+    callback(400, {
+      Error:
+        "phone number must be provided in the right format to update user details",
+    });
+  }
+};
 handlers._users.delete = function (data, callback) {};
 
 //handles
