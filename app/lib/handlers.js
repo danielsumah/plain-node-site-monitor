@@ -28,10 +28,11 @@ handlers._users = {};
  * only let authenticated users access their own data
  */
 handlers._users.get = function (data, callback) {
+  console.log(data.queryStringObject);
   const phone =
-    typeof data.payload.phone == "string" &&
-    data.payload.phone.trim().length == 13
-      ? data.payload.phone.trim()
+    typeof data.queryStringObject.phone == "string" &&
+    data.queryStringObject.phone.trim().length == 13
+      ? data.queryStringObject.phone.trim()
       : false;
 
   if (phone) {
@@ -116,9 +117,9 @@ handlers._users.post = function (data, callback) {
 handlers._users.put = function (data, callback) {
   //compulsory payload
   const phone =
-    typeof data.payload.phone == "string" &&
-    data.payload.phone.trim().length === 13
-      ? data.payload.phone.trim()
+    typeof data.queryStringObject.phone == "string" &&
+    data.queryStringObject.phone.trim().length === 13
+      ? data.queryStringObject.phone.trim()
       : false;
 
   // optional payloads
@@ -172,9 +173,9 @@ handlers._users.put = function (data, callback) {
 
 handlers._users.delete = function (data, callback) {
   const phone =
-    typeof data.payload.phone == "string" &&
-    data.payload.phone.trim().length == 13
-      ? data.payload.phone.trim()
+    typeof data.queryStringObject.phone == "string" &&
+    data.queryStringObject.phone.trim().length == 13
+      ? data.queryStringObject.phone.trim()
       : false;
 
   if (phone) {

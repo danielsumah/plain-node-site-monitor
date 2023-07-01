@@ -36,7 +36,8 @@ const unifiedServerLogic = function (req, res) {
   console.log("some one hit the server");
   //parse the url
   const parseUrl = url.parse(req.url, true);
-  const trimmedPath = parseUrl.path.replace(/^\/|\/$/g, "");
+  const path = parseUrl.pathname;
+  const trimmedPath = path.replace(/^\/|\/$/g, "");
   const requestQuery = parseUrl.query;
 
   const decoder = new StringDecoder("utf-8");
