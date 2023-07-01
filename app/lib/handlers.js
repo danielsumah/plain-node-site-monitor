@@ -169,7 +169,32 @@ handlers._users.put = function (data, callback) {
     });
   }
 };
-handlers._users.delete = function (data, callback) {};
+
+handlers._users.delete = function (data, callback) {
+  const phone =
+    typeof data.payload.phone == "string" &&
+    data.payload.phone.trim().length == 13
+      ? data.payload.phone.trim()
+      : false;
+
+  if (phone) {
+    _data.read("users", phone, (err, data) => {
+      if (!err && data) {
+        _data.delete("users", phone, (err) => {
+          if (!err) {
+            callback(200, { message: "User deleted" });
+          } else {
+            callback(500, { Error: "User could not be deleted" });
+          }
+        });
+      } else {
+        callback(500, { Error: "User does not exist" });
+      }
+    });
+  } else {
+    callback(204, { message: "Phone number must be in the right format" });
+  }
+};
 
 //handles
 handlers.sample = function (data, callback) {
