@@ -1,6 +1,7 @@
 // dependencies
 const fs = require("fs");
 const path = require("path");
+const helpers = require("./helpers");
 
 const lib = {};
 
@@ -40,7 +41,11 @@ lib.read = function (dir, fileName, callback) {
     lib.baseDir + dir + "/" + fileName + ".json",
     "utf8",
     function (err, data) {
-      callback(err, data);
+      if (!err && data) {
+        callback(err, helpers.parseJsonToObject(data));
+      } else {
+        callback(err, data);
+      }
     }
   );
 };

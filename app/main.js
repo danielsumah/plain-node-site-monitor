@@ -4,27 +4,14 @@ const url = require("url");
 const StringDecoder = require("string_decoder").StringDecoder;
 const config = require("./config");
 const fs = require("fs");
-const _data = require("./lib/data");
+const handlers = require("./lib/handlers");
+const helpers = require("./lib/helpers");
 
-// test implforwriting to file
-// @TODO deletethis
-// _data.create("test", "newFile", { name: "Daniel" }, (err) => {
-//   console.log("This is the error: ", err, "\n This was the data ");
-// });
-// _data.read("test", "newFile", (err, data) => {
-//   console.log("This is the error: ", err, "\n This was the data ", data);
-// });
-// _data.update("test", "newFile", { name: "Daniel Sumah" }, (err) => {
-//   console.log("This is the error: ", err);
-// });
-_data.delete("test", "newFile", (err) => {
-  console.log("This is the error: ", err);
-});
 // create and start http server
 const httpServer = http.createServer((req, res) => {
   unifiedServerLogic(req, res);
 });
-httpServer.listen(config.port, () => {
+httpServer.listen(config.httpPort, () => {
   console.log(
     `Server connected env: ${config.envName} port : ${config.httpPort}`
   );
@@ -38,7 +25,7 @@ const httpsServerOptions = {
 const httpsServer = https.createServer(httpsServerOptions, (req, res) => {
   unifiedServerLogic(req, res);
 });
-httpsServer.listen(config.port, () => {
+httpsServer.listen(config.httpsPort, () => {
   console.log(
     `Server connected env: ${config.envName} port : ${config.httpsPort}`
   );
@@ -46,6 +33,7 @@ httpsServer.listen(config.port, () => {
 
 // handles both http and https logic
 const unifiedServerLogic = function (req, res) {
+  console.log("some one hit the server");
   //parse the url
   const parseUrl = url.parse(req.url, true);
   const trimmedPath = parseUrl.path.replace(/^\/|\/$/g, "");
@@ -68,9 +56,9 @@ const unifiedServerLogic = function (req, res) {
     const data = {
       trimmedPath: trimmedPath,
       queryStringObject: requestQuery,
-      method: req.method,
+      method: req.method.toLocaleLowerCase(),
       headers: req.headers,
-      payload: buffer,
+      payload: helpers.parseJsonToObject(buffer),
     };
 
     requestHandler(data, (statusCode, payload) => {
@@ -89,18 +77,8 @@ const unifiedServerLogic = function (req, res) {
     });
   });
 };
-const handlers = {};
-
-//handles
-handlers.sample = function (data, callback) {
-  callback(406, { name: "this is sample handler" });
-};
-
-//notfound handler
-handlers.notFound = function (data, callback) {
-  callback(404);
-};
 
 const routes = {
   sample: handlers.sample,
+  users: handlers.users,
 };

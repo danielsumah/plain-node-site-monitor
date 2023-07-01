@@ -1,15 +1,17 @@
 const environments = {};
 
 environments.staging = {
-  httpPort: 3000,
-  httpsPort: 3001,
+  httpPort: 4000,
+  httpsPort: 4001,
   envName: "staging",
+  hashingSecret: "stagingHashingSecret",
 };
 
 environments.production = {
   httpPort: 5000,
   httpsPort: 5001,
   envName: "production",
+  hashingSecret: "productionHashingSecret",
 };
 
 // determine which env was called by the command line
