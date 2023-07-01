@@ -45,4 +45,48 @@ lib.read = function (dir, fileName, callback) {
   );
 };
 
+// Write data to file
+lib.update = function (dir, file, data, callback) {
+  fs.open(
+    lib.baseDir + dir + "/" + file + ".json",
+    "r+",
+    function (err, fileDescriptor) {
+      if (!err && fileDescriptor) {
+        const stringData = JSON.stringify(data);
+
+        fs.truncate(fileDescriptor, (err) => {
+          if (!err) {
+            fs.writeFile(fileDescriptor, stringData, function (err) {
+              if (!err) {
+                fs.close(fileDescriptor, function (err) {
+                  if (!err) {
+                    callback(false);
+                  } else {
+                    callback("Error closing existing file");
+                  }
+                });
+              } else {
+                callback("Error writing to existing file");
+              }
+            });
+          } else {
+            callback("Error truncating file");
+          }
+        });
+      } else {
+        console.log(err);
+        callback("Error pening file for editing, it may already exists");
+      }
+    }
+  );
+};
+
+lib.delete = function (dir, file, callback) {
+  fs.unlink(lib.baseDir + dir + "/" + file + ".json", function (err) {
+    if (!err) {
+      callback(false);
+    } else callback("Error deleting file");
+  });
+};
+
 module.exports = lib;

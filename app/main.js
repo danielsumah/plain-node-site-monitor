@@ -11,10 +11,15 @@ const _data = require("./lib/data");
 // _data.create("test", "newFile", { name: "Daniel" }, (err) => {
 //   console.log("This is the error: ", err, "\n This was the data ");
 // });
-_data.read("test", "newFile", (err, data) => {
-  console.log("This is the error: ", err, "\n This was the data ", data);
+// _data.read("test", "newFile", (err, data) => {
+//   console.log("This is the error: ", err, "\n This was the data ", data);
+// });
+// _data.update("test", "newFile", { name: "Daniel Sumah" }, (err) => {
+//   console.log("This is the error: ", err);
+// });
+_data.delete("test", "newFile", (err) => {
+  console.log("This is the error: ", err);
 });
-
 // create and start http server
 const httpServer = http.createServer((req, res) => {
   unifiedServerLogic(req, res);
