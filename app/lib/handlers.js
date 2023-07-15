@@ -320,7 +320,31 @@ handlers._tokens.put = function (data, callback) {
   }
 };
 
-handlers._tokens.delete = function (data, callback) {};
+handlers._tokens.delete = function (data, callback) {
+  const id =
+    typeof data.queryStringObject.id == "string" &&
+    data.queryStringObject.id.trim().length == 20
+      ? data.queryStringObject.id.trim()
+      : false;
+
+  if (id) {
+    _data.read("tokens", id, (err, data) => {
+      if (!err && data) {
+        _data.delete("tokens", id, (err) => {
+          if (!err) {
+            callback(200, { message: "Token deleted" });
+          } else {
+            callback(500, { Error: "Token could not be deleted" });
+          }
+        });
+      } else {
+        callback(500, { Error: "Token does not exist" });
+      }
+    });
+  } else {
+    callback(404, { message: "Token id must be in the right format" });
+  }
+};
 
 //handles
 handlers.sample = function (data, callback) {
