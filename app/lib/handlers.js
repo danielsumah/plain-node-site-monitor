@@ -35,12 +35,24 @@ handlers._users.get = function (data, callback) {
       : false;
 
   if (phone) {
-    _data.read("users", phone, (err, data) => {
-      if (!err) {
-        delete data.hashedPassword;
-        callback(200, data);
+    const tokenId =
+      typeof data.headers.token == "string" ? data.headers.token : false;
+    handlers._tokens.verifyToken(tokenId, phone, (tokenIsValid) => {
+      console.log(tokenIsValid);
+      if (tokenIsValid == false) {
+        callback(403, {
+          Error:
+            "Missing required token in header or the token provided is invalid",
+        });
       } else {
-        callback(404, { Error: "User does not exist" });
+        _data.read("users", phone, (err, data) => {
+          if (!err) {
+            delete data.hashedPassword;
+            callback(200, data);
+          } else {
+            callback(404, { Error: "User does not exist" });
+          }
+        });
       }
     });
   } else {
@@ -139,27 +151,38 @@ handlers._users.put = function (data, callback) {
       : false;
 
   if (phone) {
-    // check if user exists
-    _data.read("users", phone, (err, data) => {
-      if (!err && data) {
-        let userDetailsUpdateObject = { ...data };
-        // update user data
-        if (firstName || lastName || password) {
-          if (firstName) {
-            userDetailsUpdateObject.firstName = firstName;
-          }
-          if (lastName) {
-            userDetailsUpdateObject.lastName = lastName;
-          }
-          if (password) {
-            userDetailsUpdateObject.hashedPassword = helpers.hash(password);
-          }
-        }
-        _data.update("users", phone, userDetailsUpdateObject, (err) => {
-          callback(201, { message: "User details have been updated" });
+    const tokenId =
+      typeof data.headers.token == "string" ? data.headers.token : false;
+    handlers._tokens.verifyToken(tokenId, phone, (tokenIsValid) => {
+      if (!tokenIsValid) {
+        callback(403, {
+          Error:
+            "Missing required token in header or the token provided is invalid",
         });
       } else {
-        callback(404, { Error: "User does not exist" });
+        // check if user exists
+        _data.read("users", phone, (err, data) => {
+          if (!err && data) {
+            let userDetailsUpdateObject = { ...data };
+            // update user data
+            if (firstName || lastName || password) {
+              if (firstName) {
+                userDetailsUpdateObject.firstName = firstName;
+              }
+              if (lastName) {
+                userDetailsUpdateObject.lastName = lastName;
+              }
+              if (password) {
+                userDetailsUpdateObject.hashedPassword = helpers.hash(password);
+              }
+            }
+            _data.update("users", phone, userDetailsUpdateObject, (err) => {
+              callback(201, { message: "User details have been updated" });
+            });
+          } else {
+            callback(404, { Error: "User does not exist" });
+          }
+        });
       }
     });
   } else {
@@ -178,17 +201,28 @@ handlers._users.delete = function (data, callback) {
       : false;
 
   if (phone) {
-    _data.read("users", phone, (err, data) => {
-      if (!err && data) {
-        _data.delete("users", phone, (err) => {
-          if (!err) {
-            callback(200, { message: "User deleted" });
-          } else {
-            callback(500, { Error: "User could not be deleted" });
-          }
+    const tokenId =
+      typeof data.headers.token == "string" ? data.headers.token : false;
+    handlers._tokens.verifyToken(tokenId, phone, (tokenIsValid) => {
+      if (!tokenIsValid) {
+        callback(403, {
+          Error:
+            "Missing required token in header or the token provided is invalid",
         });
       } else {
-        callback(500, { Error: "User does not exist" });
+        _data.read("users", phone, (err, data) => {
+          if (!err && data) {
+            _data.delete("users", phone, (err) => {
+              if (!err) {
+                callback(200, { message: "User deleted" });
+              } else {
+                callback(500, { Error: "User could not be deleted" });
+              }
+            });
+          } else {
+            callback(500, { Error: "User does not exist" });
+          }
+        });
       }
     });
   } else {
@@ -346,6 +380,19 @@ handlers._tokens.delete = function (data, callback) {
   }
 };
 
+handlers._tokens.verifyToken = function (id, phone, callback) {
+  _data.read("tokens", id, (err, tokenData) => {
+    if (!err && tokenData) {
+      if ((tokenData.phone = phone && tokenData.expires > Date.now())) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    } else {
+      callback(false);
+    }
+  });
+};
 //handles
 handlers.sample = function (data, callback) {
   callback(406, { name: "this is sample handler" });
