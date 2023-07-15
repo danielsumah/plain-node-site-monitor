@@ -5,6 +5,7 @@ environments.staging = {
   httpsPort: 4001,
   envName: "staging",
   hashingSecret: "stagingHashingSecret",
+  maxChecks: 5,
 };
 
 environments.production = {
@@ -12,6 +13,7 @@ environments.production = {
   httpsPort: 5001,
   envName: "production",
   hashingSecret: "productionHashingSecret",
+  maxChecks: 5,
 };
 
 // determine which env was called by the command line

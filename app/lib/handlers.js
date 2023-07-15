@@ -6,9 +6,8 @@
 //dependencies
 const _data = require("./data");
 const helpers = require("./helpers");
-
+const config = require("../config");
 const handlers = {};
-
 // users handlesr
 handlers.users = function (data, callback) {
   const acceptableMethods = ["get", "post", "put", "delete"];
@@ -19,7 +18,6 @@ handlers.users = function (data, callback) {
   }
 };
 
-// users sub-handlers
 handlers._users = {};
 
 /**
@@ -38,7 +36,6 @@ handlers._users.get = function (data, callback) {
     const tokenId =
       typeof data.headers.token == "string" ? data.headers.token : false;
     handlers._tokens.verifyToken(tokenId, phone, (tokenIsValid) => {
-      console.log(tokenIsValid);
       if (tokenIsValid == false) {
         callback(403, {
           Error:
@@ -107,7 +104,6 @@ handlers._users.post = function (data, callback) {
             if (!err) {
               callback(201);
             } else {
-              console.log(err);
               callback(500, { Error: "Could not create the new user" });
             }
           });
@@ -230,7 +226,7 @@ handlers._users.delete = function (data, callback) {
   }
 };
 
-// toekn handlesr
+// token handlesr
 handlers.tokens = function (data, callback) {
   const acceptableMethods = ["get", "post", "put", "delete"];
   if (acceptableMethods.indexOf(data.method) > -1) {
@@ -240,7 +236,6 @@ handlers.tokens = function (data, callback) {
   }
 };
 
-// users sub-handlers
 handlers._tokens = {};
 
 // use phone and password to generate token
@@ -274,7 +269,6 @@ handlers._tokens.post = function (data, callback) {
             if (!err) {
               callback(201, tokenObject);
             } else {
-              console.log(err);
               callback(500, { Error: "Could not create the new token" });
             }
           });
@@ -283,7 +277,7 @@ handlers._tokens.post = function (data, callback) {
           callback(400, { Error: "Passwords did not match" });
         }
       } else {
-        callback(400, { Error: "A user with the phone number already exists" });
+        callback(400, { Error: "A user with the phone number doesnot exists" });
       }
     });
   } else {
@@ -393,7 +387,117 @@ handlers._tokens.verifyToken = function (id, phone, callback) {
     }
   });
 };
-//handles
+
+// token handlesr
+handlers.checks = function (data, callback) {
+  const acceptableMethods = ["get", "post", "put", "delete"];
+  if (acceptableMethods.indexOf(data.method) > -1) {
+    handlers._checks[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+};
+//checks
+handlers._checks = {};
+/**
+ * checks post
+ * @param { protocol, url, method, successCodes, timeoutSeconds} data
+ * @param {statusCode, data} callback
+ */
+handlers._checks.post = function (data, callback) {
+  const protocol =
+    typeof data.payload.protocol == "string" &&
+    ["http", "https"].indexOf(data.payload.protocol) > -1
+      ? data.payload.protocol
+      : false;
+
+  const url =
+    typeof data.payload.url == "string" && data.payload.url.trim().length > 0
+      ? data.payload.url.trim()
+      : false;
+
+  const method =
+    typeof data.payload.method == "string" &&
+    ["post", "get", "put", "delete"].indexOf(data.payload.method) > -1
+      ? data.payload.method
+      : false;
+  const successCodes =
+    typeof data.payload.successCodes == "object" &&
+    data.payload.successCodes instanceof Array &&
+    data.payload.successCodes.length > 0
+      ? data.payload.successCodes
+      : false;
+  const timeoutSeconds =
+    typeof data.payload.timeoutSeconds == "number" &&
+    data.payload.timeoutSeconds % 1 == 0 &&
+    data.payload.timeoutSeconds >= 1 &&
+    data.payload.timeoutSeconds <= 5
+      ? data.payload.timeoutSeconds
+      : false;
+
+  if (protocol && url && method && successCodes && timeoutSeconds) {
+    const token =
+      typeof data.headers.token == "string" ? data.headers.token : false;
+    _data.read("tokens", token, (err, tokenData) => {
+      if (!err && tokenData) {
+        const userPhone = tokenData.phone;
+        _data.read("users", userPhone, (err, userData) => {
+          if ((!err, userData)) {
+            const userChecks =
+              typeof userData.checks == "object" &&
+              userData.checks instanceof Array
+                ? userData.checks
+                : [];
+            //check that the user has less than the 5 checks which is the max checks
+            if (userChecks.length < config.maxChecks) {
+              const checkId = helpers.createRandomStrings(20);
+              const checkObject = {
+                id: checkId,
+                userPhone,
+                protocol,
+                url,
+                method,
+                successCodes,
+                timeoutSeconds,
+              };
+
+              _data.create("checks", checkId, checkObject, (err) => {
+                if (!err) {
+                  userData.checks = userChecks;
+                  userData.checks.push(checkId);
+                  _data.update("users", userPhone, userData, (err) => {
+                    if (!err) {
+                      callback(201, checkObject);
+                    } else {
+                      callback(200, {
+                        Error: "Could not update the user with the new cheeck",
+                      });
+                    }
+                  });
+                } else {
+                  callback(500, { Error: "Could not create new check" });
+                }
+              });
+            } else {
+              callback(400, {
+                Error: `Your number of checks is at maximum ${config.maxChecks}`,
+              });
+            }
+          } else {
+            callback(400, {
+              Error: "User with this phone number does not exist",
+            });
+          }
+        });
+      } else {
+        callback(403, { Error: "Token must be provided" });
+      }
+    });
+  } else {
+    callback(400, { Error: "Invalid inputs provided" });
+  }
+};
+
 handlers.sample = function (data, callback) {
   callback(406, { name: "this is sample handler" });
 };

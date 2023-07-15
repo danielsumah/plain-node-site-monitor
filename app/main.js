@@ -83,4 +83,5 @@ const routes = {
   sample: handlers.sample,
   users: handlers.users,
   tokens: handlers.tokens,
+  checks: handlers.checks,
 };
