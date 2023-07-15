@@ -537,6 +537,100 @@ handlers._checks.get = function (data, callback) {
     });
   }
 };
+
+handlers._checks.put = function (data, callback) {
+  // compulsory
+  const id =
+    typeof data.payload.id == "string" && data.payload.id.trim().length == 20
+      ? data.payload.id.trim()
+      : false;
+
+  //optional
+  const protocol =
+    typeof data.payload.protocol == "string" &&
+    ["http", "https"].indexOf(data.payload.protocol) > -1
+      ? data.payload.protocol
+      : false;
+
+  const url =
+    typeof data.payload.url == "string" && data.payload.url.trim().length > 0
+      ? data.payload.url.trim()
+      : false;
+
+  const method =
+    typeof data.payload.method == "string" &&
+    ["post", "get", "put", "delete"].indexOf(data.payload.method) > -1
+      ? data.payload.method
+      : false;
+  const successCodes =
+    typeof data.payload.successCodes == "object" &&
+    data.payload.successCodes instanceof Array &&
+    data.payload.successCodes.length > 0
+      ? data.payload.successCodes
+      : false;
+  const timeoutSeconds =
+    typeof data.payload.timeoutSeconds == "number" &&
+    data.payload.timeoutSeconds % 1 == 0 &&
+    data.payload.timeoutSeconds >= 1 &&
+    data.payload.timeoutSeconds <= 5
+      ? data.payload.timeoutSeconds
+      : false;
+
+  if (id) {
+    if (protocol || url || method || successCodes || timeoutSeconds) {
+      _data.read("checks", id, (err, checkData) => {
+        if (!err && checkData) {
+          const tokenId =
+            typeof data.headers.token == "string" ? data.headers.token : false;
+
+          handlers._tokens.verifyToken(
+            tokenId,
+            checkData.userPhone,
+            (tokenIsValid) => {
+              if (tokenIsValid) {
+                // update check here
+
+                if (protocol) {
+                  checkData.protocol = protocol;
+                }
+                if (url) {
+                  checkData.url = url;
+                }
+                if (method) {
+                  checkData.method = method;
+                }
+                if (timeoutSeconds) {
+                  checkData.timeoutSeconds = timeoutSeconds;
+                }
+                if (successCodes) {
+                  checkData.successCodes = successCodes;
+                }
+
+                _data.update("checks", id, checkData, (err) => {
+                  if (!err) {
+                    callback(201, checkData);
+                  } else {
+                    callback(500, { Error: "Error updating check" });
+                  }
+                });
+              } else {
+                callback(403, {
+                  Error: "Unauthorised ",
+                });
+              }
+            }
+          );
+        } else {
+          callback(404, { Error: "Check with that id does not exist" });
+        }
+      });
+    } else {
+      callback(400, { Error: "Invalid inputs provided" });
+    }
+  } else {
+    callback(400, { Error: "Check id must be provided" });
+  }
+};
 handlers.sample = function (data, callback) {
   callback(406, { name: "this is sample handler" });
 };
