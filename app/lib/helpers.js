@@ -36,11 +36,12 @@ helpers.createRandomStrings = function (strLength) {
   if (strLength) {
     const allowedCharacters = "abcdefghijklmnopqrstuvwxyz0123456789";
     let str = "";
-    for (let i = 0; i <= strLength; i++) {
+    for (let i = 0; i < strLength; i++) {
       let randomCharacter = allowedCharacters.charAt(
         Math.floor(Math.random() * allowedCharacters.length)
       );
       str += randomCharacter;
+      console.log(str, str.length);
     }
     return str;
   }

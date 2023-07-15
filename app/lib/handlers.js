@@ -28,7 +28,6 @@ handlers._users = {};
  * only let authenticated users access their own data
  */
 handlers._users.get = function (data, callback) {
-  console.log(data.queryStringObject);
   const phone =
     typeof data.queryStringObject.phone == "string" &&
     data.queryStringObject.phone.trim().length == 13
@@ -260,7 +259,27 @@ handlers._tokens.post = function (data, callback) {
   }
 };
 
-handlers._tokens.get = function (data, callback) {};
+handlers._tokens.get = function (data, callback) {
+  const id =
+    typeof data.queryStringObject.id == "string" &&
+    data.queryStringObject.id.trim().length == 20
+      ? data.queryStringObject.id.trim()
+      : false;
+
+  if (id) {
+    _data.read("tokens", id, (err, data) => {
+      if (!err) {
+        callback(200, data);
+      } else {
+        callback(404);
+      }
+    });
+  } else {
+    callback(400, {
+      Error: "Token id is not provided in the right format",
+    });
+  }
+};
 
 handlers._tokens.put = function (data, callback) {};
 
