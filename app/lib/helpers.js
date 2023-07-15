@@ -41,7 +41,6 @@ helpers.createRandomStrings = function (strLength) {
         Math.floor(Math.random() * allowedCharacters.length)
       );
       str += randomCharacter;
-      console.log(str, str.length);
     }
     return str;
   }

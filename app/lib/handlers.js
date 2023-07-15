@@ -281,7 +281,44 @@ handlers._tokens.get = function (data, callback) {
   }
 };
 
-handlers._tokens.put = function (data, callback) {};
+handlers._tokens.put = function (data, callback) {
+  //compulsory payload
+  const id =
+    typeof data.payload.id == "string" && data.payload.id.trim().length === 20
+      ? data.payload.id.trim()
+      : false;
+
+  // optional payloads
+  const extend =
+    typeof data.payload.extend == "boolean" && data.payload.extend == true
+      ? true
+      : false;
+
+  if (id && extend) {
+    // check if token exists
+    _data.read("tokens", id, (err, tokenData) => {
+      if (!err && tokenData) {
+        if (tokenData.expires > Date.now()) {
+          tokenData.expires = Date.now() + 1000 * 60 * 60;
+
+          _data.update("tokens", id, tokenData, (err) => {
+            if (!err) {
+              callback(201);
+            } else {
+              callback(500, { Error: "Could not update token" });
+            }
+          });
+        }
+      } else {
+        callback(404, { Error: "Token has expired and cannot be extended" });
+      }
+    });
+  } else {
+    callback(400, {
+      Error: "Cannot update token",
+    });
+  }
+};
 
 handlers._tokens.delete = function (data, callback) {};
 
