@@ -20,12 +20,29 @@ helpers.hash = function (str) {
     return false;
   }
 };
+
 helpers.parseJsonToObject = function (jsonString) {
   try {
     const object = JSON.parse(jsonString);
     return object;
   } catch {
     return {};
+  }
+};
+
+helpers.createRandomStrings = function (strLength) {
+  strLength = typeof strLength == "number" && strLength > 0 ? strLength : false;
+
+  if (strLength) {
+    const allowedCharacters = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let str = "";
+    for (let i = 0; i <= strLength; i++) {
+      let randomCharacter = allowedCharacters.charAt(
+        Math.floor(Math.random() * allowedCharacters.length)
+      );
+      str += randomCharacter;
+    }
+    return str;
   }
 };
 

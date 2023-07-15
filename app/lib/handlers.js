@@ -197,6 +197,75 @@ handlers._users.delete = function (data, callback) {
   }
 };
 
+// toekn handlesr
+handlers.tokens = function (data, callback) {
+  const acceptableMethods = ["get", "post", "put", "delete"];
+  if (acceptableMethods.indexOf(data.method) > -1) {
+    handlers._tokens[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+};
+
+// users sub-handlers
+handlers._tokens = {};
+
+// use phone and password to generate token
+handlers._tokens.post = function (data, callback) {
+  const phone =
+    typeof data.payload.phone == "string" &&
+    data.payload.phone.trim().length === 13
+      ? data.payload.phone.trim()
+      : false;
+  const password =
+    typeof data.payload.password == "string" &&
+    data.payload.password.trim().length > 0
+      ? data.payload.password.trim()
+      : false;
+
+  if (phone && password) {
+    // hash the password
+    _data.read("users", phone, function (err, data) {
+      if (!err && data) {
+        // create the user
+        const hashedPassword = helpers.hash(password);
+        if (hashedPassword == data.hashedPassword) {
+          const tokenId = helpers.createRandomStrings(20);
+          const expires = Date.now() + 1000 * 60 * 60;
+          const tokenObject = {
+            phone,
+            id: tokenId,
+            expires,
+          };
+          _data.create("tokens", tokenId, tokenObject, (err) => {
+            if (!err) {
+              callback(201, tokenObject);
+            } else {
+              console.log(err);
+              callback(500, { Error: "Could not create the new token" });
+            }
+          });
+          //store token in database
+        } else {
+          callback(400, { Error: "Passwords did not match" });
+        }
+      } else {
+        callback(400, { Error: "A user with the phone number already exists" });
+      }
+    });
+  } else {
+    callback(400, {
+      Error: "Phone and password must be provided in the right format to login",
+    });
+  }
+};
+
+handlers._tokens.get = function (data, callback) {};
+
+handlers._tokens.put = function (data, callback) {};
+
+handlers._tokens.delete = function (data, callback) {};
+
 //handles
 handlers.sample = function (data, callback) {
   callback(406, { name: "this is sample handler" });

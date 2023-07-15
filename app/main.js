@@ -82,4 +82,5 @@ const unifiedServerLogic = function (req, res) {
 const routes = {
   sample: handlers.sample,
   users: handlers.users,
+  tokens: handlers.tokens,
 };
