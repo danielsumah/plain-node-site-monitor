@@ -336,9 +336,11 @@ handlers._tokens.put = function (data, callback) {
               callback(500, { Error: "Could not update token" });
             }
           });
+        } else {
+          callback(404, { Error: "Token has expired and cannot be extended" });
         }
       } else {
-        callback(404, { Error: "Token has expired and cannot be extended" });
+        callback(404, { Error: "Error fetching token" });
       }
     });
   } else {
@@ -629,6 +631,89 @@ handlers._checks.put = function (data, callback) {
     }
   } else {
     callback(400, { Error: "Check id must be provided" });
+  }
+};
+
+handlers._checks.delete = function (data, callback) {
+  const id =
+    typeof data.queryStringObject.id == "string" &&
+    data.queryStringObject.id.trim().length == 20
+      ? data.queryStringObject.id.trim()
+      : false;
+
+  if (id) {
+    _data.read("checks", id, (err, checkData) => {
+      if (!err && checkData) {
+        const tokenId =
+          typeof data.headers.token == "string" ? data.headers.token : false;
+        handlers._tokens.verifyToken(
+          tokenId,
+          checkData.userPhone,
+          (tokenIsValid) => {
+            if (tokenIsValid) {
+              _data.delete("checks", id, (err) => {
+                if (!err) {
+                  _data.read("users", checkData.userPhone, (err, userData) => {
+                    if (!err && userData) {
+                      const userChecks =
+                        typeof userData.checks == "object" &&
+                        userData.checks instanceof Array
+                          ? userData.checks
+                          : [];
+                      //remove the deleted checks from user check list
+                      const checkPosition = userChecks.indexOf(id);
+                      if (checkPosition > -1) {
+                        userChecks.splice(checkPosition, 1);
+                        _data.update(
+                          "users",
+                          userData.phone,
+                          userData,
+                          (err) => {
+                            if (!err) {
+                              callback(201, {
+                                message:
+                                  "User data updated after deleting check",
+                              });
+                            } else {
+                              callback(500, {
+                                Error:
+                                  "Could not update user data after finding deleting user",
+                              });
+                            }
+                          }
+                        );
+                      } else {
+                        callback(500, {
+                          Error: "Could not find the check in user object",
+                        });
+                      }
+                    } else {
+                      callback(500, {
+                        Error:
+                          "Could not find the user who created the check. Hence, check could not be dissassociaated from the user",
+                      });
+                    }
+                  });
+                } else {
+                  callback(400, {
+                    Error: "Could not delete the check",
+                  });
+                }
+              });
+            } else {
+              callback(403, {
+                Error:
+                  "Missing required token in header or the token provided is invalid",
+              });
+            }
+          }
+        );
+      } else {
+        callback(500, { Error: "Check does not exist" });
+      }
+    });
+  } else {
+    callback(404, { message: "Check id must be in the right format" });
   }
 };
 handlers.sample = function (data, callback) {
