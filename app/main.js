@@ -4,6 +4,7 @@ const url = require("url");
 const StringDecoder = require("string_decoder").StringDecoder;
 const config = require("./config");
 const fs = require("fs");
+const path = require("path");
 const handlers = require("./lib/handlers");
 const helpers = require("./lib/helpers");
 
@@ -16,11 +17,10 @@ httpServer.listen(config.httpPort, () => {
     `Server connected env: ${config.envName} port : ${config.httpPort}`
   );
 });
-
 // create and start https server
 const httpsServerOptions = {
-  key: fs.readFileSync("./https/key.pem"),
-  cert: fs.readFileSync("./https/cert.pem"),
+  key: fs.readFileSync(path.join(__dirname, "/https/key.pem")),
+  cert: fs.readFileSync(path.join(__dirname, "/https/cert.pem")),
 };
 const httpsServer = https.createServer(httpsServerOptions, (req, res) => {
   unifiedServerLogic(req, res);
