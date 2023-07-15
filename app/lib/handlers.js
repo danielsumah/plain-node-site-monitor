@@ -206,11 +206,47 @@ handlers._users.delete = function (data, callback) {
             "Missing required token in header or the token provided is invalid",
         });
       } else {
-        _data.read("users", phone, (err, data) => {
-          if (!err && data) {
+        _data.read("users", phone, (err, userData) => {
+          if (!err && userData) {
             _data.delete("users", phone, (err) => {
               if (!err) {
-                callback(200, { message: "User deleted" });
+                //delete all checks assiciated with this user
+                const userChecks =
+                  typeof userData.checks == "object" &&
+                  userData.checks instanceof Array
+                    ? userData.checks
+                    : [];
+                const numberOfChecksToDelete = userChecks.length;
+                if (numberOfChecksToDelete > 0) {
+                  let deletedCount = 0;
+                  let deletionErrors = false;
+                  userChecks.forEach((checkId) => {
+                    _data.delete("checks", checkId, (err) => {
+                      if (err) {
+                        deletionErrors = true;
+                      }
+                      deletedCount++;
+                      if (deletedCount == numberOfChecksToDelete) {
+                        if (!deletionErrors) {
+                          callback(200, {
+                            message:
+                              "User deleted.Any check the user has has also been deleted",
+                          });
+                        } else {
+                          callback(500, {
+                            Error:
+                              "Errors encountered when deleting user's check. The user may still have checks in the system",
+                          });
+                        }
+                      }
+                    });
+                  });
+                } else {
+                  callback(200, {
+                    message:
+                      "User deleted.Any check the user has has also been deleted",
+                  });
+                }
               } else {
                 callback(500, { Error: "User could not be deleted" });
               }
