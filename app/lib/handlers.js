@@ -377,7 +377,7 @@ handlers._tokens.delete = function (data, callback) {
 handlers._tokens.verifyToken = function (id, phone, callback) {
   _data.read("tokens", id, (err, tokenData) => {
     if (!err && tokenData) {
-      if ((tokenData.phone = phone && tokenData.expires > Date.now())) {
+      if (tokenData.phone == phone && tokenData.expires > Date.now()) {
         callback(true);
       } else {
         callback(false);
@@ -498,6 +498,45 @@ handlers._checks.post = function (data, callback) {
   }
 };
 
+handlers._checks.get = function (data, callback) {
+  const id =
+    typeof data.queryStringObject.id == "string" &&
+    data.queryStringObject.id.trim().length == 20
+      ? data.queryStringObject.id.trim()
+      : false;
+
+  if (id) {
+    const tokenId =
+      typeof data.headers.token == "string" ? data.headers.token : false;
+    if (tokenId) {
+      _data.read("checks", id, (err, checkData) => {
+        if (!err && checkData) {
+          handlers._tokens.verifyToken(
+            tokenId,
+            checkData.userPhone,
+            (tokenIsValid) => {
+              if (tokenIsValid) {
+                callback(200, checkData);
+              } else {
+                callback(403, {
+                  Error: "Unauthorised ",
+                });
+              }
+            }
+          );
+        } else {
+          callback(404, { Error: "Check with the id provided does not exist" });
+        }
+      });
+    } else {
+      callback(404, { Error: "You must provide a token" });
+    }
+  } else {
+    callback(400, {
+      Error: "Phone number should be a 13 digit string starting with 234",
+    });
+  }
+};
 handlers.sample = function (data, callback) {
   callback(406, { name: "this is sample handler" });
 };
