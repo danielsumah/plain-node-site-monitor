@@ -1,87 +1,21 @@
-const http = require("http");
-const https = require("https");
-const url = require("url");
-const StringDecoder = require("string_decoder").StringDecoder;
-const config = require("./config");
-const fs = require("fs");
-const path = require("path");
-const handlers = require("./lib/handlers");
-const helpers = require("./lib/helpers");
+/**
+ * Primary API file
+ */
 
-// create and start http server
-const httpServer = http.createServer((req, res) => {
-  unifiedServerLogic(req, res);
-});
-httpServer.listen(config.httpPort, () => {
-  console.log(
-    `Server connected env: ${config.envName} port : ${config.httpPort}`
-  );
-});
-// create and start https server
-const httpsServerOptions = {
-  key: fs.readFileSync(path.join(__dirname, "/https/key.pem")),
-  cert: fs.readFileSync(path.join(__dirname, "/https/cert.pem")),
-};
-const httpsServer = https.createServer(httpsServerOptions, (req, res) => {
-  unifiedServerLogic(req, res);
-});
-httpsServer.listen(config.httpsPort, () => {
-  console.log(
-    `Server connected env: ${config.envName} port : ${config.httpsPort}`
-  );
-});
+// Dependencies
+const server = require("./lib/server");
+const workers = require("./lib/workers");
 
-// handles both http and https logic
-const unifiedServerLogic = function (req, res) {
-  console.log("some one hit the server");
-  //parse the url
-  const parseUrl = url.parse(req.url, true);
-  const path = parseUrl.pathname;
-  const trimmedPath = path.replace(/^\/|\/$/g, "");
-  const requestQuery = parseUrl.query;
+const app = {};
 
-  const decoder = new StringDecoder("utf-8");
-  buffer = "";
-  req.on("data", (data) => {
-    buffer += decoder.write(data);
-  });
+app.init = function () {
+  // start server
+  server.init();
 
-  req.on("end", () => {
-    // determine the handler to handle the request based on the route
-    const requestHandler =
-      typeof routes[trimmedPath] !== "undefined"
-        ? handlers[trimmedPath]
-        : handlers.notFound;
-
-    //gather the important request data
-    const data = {
-      trimmedPath: trimmedPath,
-      queryStringObject: requestQuery,
-      method: req.method.toLocaleLowerCase(),
-      headers: req.headers,
-      payload: helpers.parseJsonToObject(buffer),
-    };
-
-    requestHandler(data, (statusCode, payload) => {
-      //specify some defaultstatus codes and payload
-      statusCode = typeof statusCode == "number" ? statusCode : 200;
-
-      payload = typeof payload == "object" ? payload : {};
-
-      const stringifiedPayload = JSON.stringify(payload);
-
-      res.setHeader("content-type", "application/json");
-      res.writeHead(statusCode);
-      res.end(stringifiedPayload);
-
-      console.log("Sending response: ", statusCode, stringifiedPayload);
-    });
-  });
+  // start worker
+  // workers.init();
 };
 
-const routes = {
-  sample: handlers.sample,
-  users: handlers.users,
-  tokens: handlers.tokens,
-  checks: handlers.checks,
-};
+app.init();
+
+module.exports = app;

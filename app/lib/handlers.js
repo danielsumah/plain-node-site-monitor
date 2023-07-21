@@ -6,7 +6,7 @@
 //dependencies
 const _data = require("./data");
 const helpers = require("./helpers");
-const config = require("../config");
+const config = require("./config");
 const handlers = {};
 // users handlesr
 handlers.users = function (data, callback) {
