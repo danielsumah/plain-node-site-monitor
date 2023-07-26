@@ -40,7 +40,7 @@ workers.validateCheckData = (originalCheckData) => {
 
   originalCheckData.userPhone =
     typeof originalCheckData.userPhone.trim() == "string" &&
-    originalCheckData.userPhone.trim().length == 13
+    originalCheckData.userPhone.trim().length == 14
       ? originalCheckData.userPhone.trim()
       : false;
 

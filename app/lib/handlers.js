@@ -28,7 +28,7 @@ handlers._users = {};
 handlers._users.get = function (data, callback) {
   const phone =
     typeof data.queryStringObject.phone == "string" &&
-    data.queryStringObject.phone.trim().length == 13
+    data.queryStringObject.phone.trim().length == 14
       ? data.queryStringObject.phone.trim()
       : false;
 
@@ -54,7 +54,7 @@ handlers._users.get = function (data, callback) {
     });
   } else {
     callback(400, {
-      Error: "Phone number should be a 13 digit string starting with 234",
+      Error: "Phone number should be a 14 digit string starting with 234",
     });
   }
 };
@@ -73,7 +73,7 @@ handlers._users.post = function (data, callback) {
       : false;
   const phone =
     typeof data.payload.phone == "string" &&
-    data.payload.phone.trim().length === 13
+    data.payload.phone.trim().length === 14
       ? data.payload.phone.trim()
       : false;
   const password =
@@ -125,7 +125,7 @@ handlers._users.put = function (data, callback) {
   //compulsory payload
   const phone =
     typeof data.queryStringObject.phone == "string" &&
-    data.queryStringObject.phone.trim().length === 13
+    data.queryStringObject.phone.trim().length === 14
       ? data.queryStringObject.phone.trim()
       : false;
 
@@ -192,7 +192,7 @@ handlers._users.put = function (data, callback) {
 handlers._users.delete = function (data, callback) {
   const phone =
     typeof data.queryStringObject.phone == "string" &&
-    data.queryStringObject.phone.trim().length == 13
+    data.queryStringObject.phone.trim().length == 14
       ? data.queryStringObject.phone.trim()
       : false;
 
@@ -278,7 +278,7 @@ handlers._tokens = {};
 handlers._tokens.post = function (data, callback) {
   const phone =
     typeof data.payload.phone == "string" &&
-    data.payload.phone.trim().length === 13
+    data.payload.phone.trim().length === 14
       ? data.payload.phone.trim()
       : false;
   const password =
@@ -571,7 +571,7 @@ handlers._checks.get = function (data, callback) {
     }
   } else {
     callback(400, {
-      Error: "Phone number should be a 13 digit string starting with 234",
+      Error: "Phone number should be a 14 digit string starting with 234",
     });
   }
 };
