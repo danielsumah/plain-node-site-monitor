@@ -146,6 +146,8 @@ workers.performCheck = function (originalCheckData) {
 
     //update checkout and pass data along
     checkOutcome.responseCode = status;
+    console.log("\n");
+    console.log(originalCheckData.url, checkOutcome);
 
     if (!outcomeSent) {
       workers.processCheckOutcome(originalCheckData, checkOutcome);
@@ -210,7 +212,9 @@ workers.processCheckOutcome = function (originalCheckData, checkOutcome) {
       if (alertWarranted) {
         workers.alertUserAboutStatusChange(newCheckData);
       } else {
-        console.log("\nCheck status has not changed, no alert is needed");
+        console.log(
+          `\nCheck status for ${newCheckData.id} => ${newCheckData.url} new has not changed, no alert is needed`
+        );
       }
     } else {
       console.log("\nError trying to save update to one of the check");

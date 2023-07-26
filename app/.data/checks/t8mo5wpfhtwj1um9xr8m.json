@@ -1,1 +1,1 @@
-{"id":"t8mo5wpfhtwj1um9xr8m","userPhone":"2348061174247","protocol":"http","url":"www.facebook.com","method":"get","successCodes":[200,201],"timeoutSeconds":3,"state":"down","lastChecked":1690341506809}
+{"id":"t8mo5wpfhtwj1um9xr8m","userPhone":"2348061174247","protocol":"https","url":"www.facebook.com","method":"get","successCodes":[200,201,302],"timeoutSeconds":3,"state":"up","lastChecked":1690342547585}
