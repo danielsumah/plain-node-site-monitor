@@ -11,106 +11,108 @@ workers.gatherAllChecks = function () {
   _data.list("checks", (err, checks) => {
     if (!err && checks && checks.length > 0) {
       checks.forEach((check) => {
-        _data.read("check", check, (err, initialCheckData) => {
-          if ((!err, initialCheckData)) {
-            workers.validateCheckData(initialCheckData);
+        _data.read("checks", check, (err, originalCheckData) => {
+          if ((!err, originalCheckData)) {
+            workers.validateCheckData(originalCheckData);
           } else {
-            console.log("Error reading check data => ", check);
+            console.log("\nError reading check data => ", check);
+            console.log(err);
           }
         });
       });
     } else {
-      console.log("Error: Could not find any check process");
+      console.log("\nError: Could not find any check process");
     }
   });
 };
 
-workers.validateCheckData = (initialCheckData) => {
-  initialCheckData =
-    typeof initialCheckData == "object" && initialCheckData !== null
-      ? initialCheckData
+workers.validateCheckData = (originalCheckData) => {
+  originalCheckData =
+    typeof originalCheckData == "object" && originalCheckData !== null
+      ? originalCheckData
       : {};
 
-  initialCheckData.id =
-    typeof initialCheckData.id.trim() == "string" &&
-    initialCheckData.id.trim().length == 20
-      ? initialCheckData.id.trim()
+  originalCheckData.id =
+    typeof originalCheckData.id.trim() == "string" &&
+    originalCheckData.id.trim().length == 20
+      ? originalCheckData.id.trim()
       : false;
 
-  initialCheckData.userPhone =
-    typeof initialCheckData.userPhone.trim() == "string" &&
-    initialCheckData.userPhone.trim().length == 13
-      ? initialCheckData.userPhone.trim()
+  originalCheckData.userPhone =
+    typeof originalCheckData.userPhone.trim() == "string" &&
+    originalCheckData.userPhone.trim().length == 13
+      ? originalCheckData.userPhone.trim()
       : false;
 
-  initialCheckData.protocal =
-    typeof initialCheckData.protocal == "string" &&
-    ["http", "https"].indexOf(initialCheckData.protocal) > -1
-      ? initialCheckData.protocal
+  originalCheckData.protocol =
+    typeof originalCheckData.protocol == "string" &&
+    ["http", "https"].indexOf(originalCheckData.protocol) > -1
+      ? originalCheckData.protocol
       : false;
 
-  initialCheckData.url =
-    typeof initialCheckData.url.trim() == "string" &&
-    initialCheckData.url.trim().length > 0
-      ? initialCheckData.url.trim()
+  originalCheckData.url =
+    typeof originalCheckData.url.trim() == "string" &&
+    originalCheckData.url.trim().length > 0
+      ? originalCheckData.url.trim()
       : false;
 
-  initialCheckData.method =
-    typeof initialCheckData.method == "string" &&
-    ["get", "post", "put", "delete"].indexOf(initialCheckData.method) > -1
-      ? initialCheckData.method
+  originalCheckData.method =
+    typeof originalCheckData.method == "string" &&
+    ["get", "post", "put", "delete"].indexOf(originalCheckData.method) > -1
+      ? originalCheckData.method
       : false;
 
-  initialCheckData.successCodes =
-    typeof initialCheckData.successCodes == "object" &&
-    initialCheckData.successCodes instanceof Array &&
-    initialCheckData.successCodes.length > 0
-      ? initialCheckData.successCodes
+  originalCheckData.successCodes =
+    typeof originalCheckData.successCodes == "object" &&
+    originalCheckData.successCodes instanceof Array &&
+    originalCheckData.successCodes.length > 0
+      ? originalCheckData.successCodes
       : false;
 
-  initialCheckData.timeoutSeconds =
-    typeof initialCheckData.timeoutSeconds == "number" &&
-    initialCheckData.timeoutSeconds % 1 == 0 &&
-    initialCheckData.timeoutSeconds >= 1 &&
-    initialCheckData.timeoutSeconds <= 5
-      ? initialCheckData.timeoutSeconds
+  originalCheckData.timeoutSeconds =
+    typeof originalCheckData.timeoutSeconds == "number" &&
+    originalCheckData.timeoutSeconds % 1 == 0 &&
+    originalCheckData.timeoutSeconds >= 1 &&
+    originalCheckData.timeoutSeconds <= 5
+      ? originalCheckData.timeoutSeconds
       : false;
 
   // Set the keys that may not beset if the worker havenever seen this check before
-  initialCheckData.state =
-    typeof initialCheckData.state == "string" &&
-    ["up", "down"].indexOf(initialCheckData.state) > -1
-      ? initialCheckData.state
+  originalCheckData.state =
+    typeof originalCheckData.state == "string" &&
+    ["up", "down"].indexOf(originalCheckData.state) > -1
+      ? originalCheckData.state
       : "down";
 
-  initialCheckData.lastChecked =
-    typeof initialCheckData.timeoutSeconds == "number" &&
-    initialCheckData.timeoutSeconds >= 0
-      ? initialCheckData.timeoutSeconds
+  originalCheckData.lastChecked =
+    typeof originalCheckData.timeoutSeconds == "number" &&
+    originalCheckData.timeoutSeconds >= 0
+      ? originalCheckData.timeoutSeconds
       : false;
 
   // pass data to next step if all data props are valid
 
   if (
-    initialCheckData.id &&
-    initialCheckData.userPhone &&
-    initialCheckData.protocal &&
-    initialCheckData.userPhone &&
-    initialCheckData.method &&
-    initialCheckData.successCodes &&
-    initialCheckData.timeoutSeconds &&
-    initialCheckData.state &&
-    initialCheckData.lastChecked
+    originalCheckData.id &&
+    originalCheckData.userPhone &&
+    originalCheckData.protocol &&
+    originalCheckData.userPhone &&
+    originalCheckData.method &&
+    originalCheckData.successCodes &&
+    originalCheckData.timeoutSeconds
   ) {
-    workers.performCheck(initialCheckData);
+    workers.performCheck(originalCheckData);
   } else {
-    console.log(`A check data is not properly formatted`);
+    console.log(
+      `\nA check data (${originalCheckData.id}) is not properly formatted \n\t data: `,
+      originalCheckData
+    );
   }
 };
 
 // perform check, send the initialcheck data and the outcome
 
-workers.performCheck = function (initialCheckData) {
+workers.performCheck = function (originalCheckData) {
   let checkOutcome = {
     error: false,
     responseCode: false,
@@ -121,7 +123,7 @@ workers.performCheck = function (initialCheckData) {
   // parse the hostname and the path out of the initial check data
 
   const parsedUrl = url.parse(
-    initialCheckData.protocal + "://" + initialCheckData.url,
+    originalCheckData.protocol + "://" + originalCheckData.url,
     true
   );
   const hostName = parsedUrl.hostname;
@@ -129,15 +131,15 @@ workers.performCheck = function (initialCheckData) {
 
   // construct request
   const requestDetails = {
-    protocal: initialCheckData.protocal + ":",
+    protocol: originalCheckData.protocol + ":",
     hostname: hostName,
-    method: initialCheckData.method.toUpperCase(),
+    method: originalCheckData.method.toUpperCase(),
     path: path,
-    timeout: initialCheckData.timeoutSeconds * 1000,
+    timeout: originalCheckData.timeoutSeconds * 1000,
   };
 
   // instanciate using http or https
-  const _moduleToUse = initialCheckData.protocal == "http" ? http : https;
+  const _moduleToUse = originalCheckData.protocol == "http" ? http : https;
 
   const req = _moduleToUse.request(requestDetails, (res) => {
     const status = res.statusCode;
@@ -146,7 +148,7 @@ workers.performCheck = function (initialCheckData) {
     checkOutcome.responseCode = status;
 
     if (!outcomeSent) {
-      workers.processCheckOutcome(initialCheckData, checkOutcome);
+      workers.processCheckOutcome(originalCheckData, checkOutcome);
       outcomeSent = true;
     }
   });
@@ -154,6 +156,93 @@ workers.performCheck = function (initialCheckData) {
   //   bind to the error event so it doesnt get thron
 
   req.on("error", (e) => {
-    checkOutcome.error = {};
+    checkOutcome.error = {
+      error: true,
+      value: e,
+    };
+
+    if (!outcomeSent) {
+      workers.processCheckOutcome(originalCheckData, checkOutcome);
+      outcomeSent = true;
+    }
+  });
+
+  // Bind to the timeout
+  req.on("timeout", (e) => {
+    checkOutcome.error = {
+      error: true,
+      value: "timeout",
+    };
+
+    if (!outcomeSent) {
+      workers.processCheckOutcome(originalCheckData, checkOutcome);
+      outcomeSent = true;
+    }
+  });
+
+  // End the request
+  req.end();
+};
+
+// process the check outcome, update the check data as needed and finally, trigger an alert
+// Special logic for acheck that has never been tested before
+workers.processCheckOutcome = function (originalCheckData, checkOutcome) {
+  // decide if the check status is up or own
+  let state =
+    !checkOutcome.error &&
+    checkOutcome.responseCode &&
+    originalCheckData.successCodes.indexOf(checkOutcome.responseCode) > -1
+      ? "up"
+      : "down";
+
+  const alertWarranted =
+    originalCheckData.lastChecked && originalCheckData.state !== state
+      ? true
+      : false;
+
+  //update the check data
+  let newCheckData = originalCheckData;
+  newCheckData.state = state;
+  newCheckData.lastChecked = Date.now();
+
+  _data.update("checks", newCheckData.id, newCheckData, (err) => {
+    if (!err) {
+      if (alertWarranted) {
+        workers.alertUserAboutStatusChange(newCheckData);
+      } else {
+        console.log("\nCheck status has not changed, no alert is needed");
+      }
+    } else {
+      console.log("\nError trying to save update to one of the check");
+    }
   });
 };
+
+workers.alertUserAboutStatusChange = (newCheckData) => {
+  const msg = `Your check for ${newCheckData.method.toUpperCase()} ${
+    newCheckData.protocol
+  }://${newCheckData.url} is currently ${newCheckData.state}`;
+
+  helpers.sendTwillioSms(newCheckData.userPhone, msg, (err) => {
+    if (!err) {
+      console.log("\nUser was alerted, message: ", msg);
+    } else {
+      console.log(
+        "\nUnable to send sms to user who had a state change in their check"
+      );
+    }
+  });
+};
+// timer to execute the workers process once per minute
+workers.loop = function () {
+  setInterval(() => {
+    workers.gatherAllChecks();
+  }, 1000 * 5);
+};
+
+workers.init = function () {
+  workers.gatherAllChecks();
+  workers.loop();
+};
+
+module.exports = workers;

@@ -13,7 +13,7 @@ app.init = function () {
   server.init();
 
   // start worker
-  // workers.init();
+  workers.init();
 };
 
 app.init();
