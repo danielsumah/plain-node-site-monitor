@@ -486,6 +486,7 @@ handlers._checks.post = function (data, callback) {
               userData.checks instanceof Array
                 ? userData.checks
                 : [];
+            console.log(userChecks);
             //check that the user has less than the 5 checks which is the max checks
             if (userChecks.length < config.maxChecks) {
               const checkId = helpers.createRandomStrings(20);

@@ -5,6 +5,8 @@ const https = require("https");
 const helpers = require("./helpers");
 const url = require("url");
 const _logs = require("./logs");
+const util = require("util");
+const debug = util.debuglog("workers");
 
 const workers = {};
 
@@ -16,13 +18,13 @@ workers.gatherAllChecks = function () {
           if ((!err, originalCheckData)) {
             workers.validateCheckData(originalCheckData);
           } else {
-            console.log("\nError reading check data => ", check);
-            console.log(err);
+            debug("\nError reading check data => ", check);
+            debug(err);
           }
         });
       });
     } else {
-      console.log("\nError: Could not find any check process");
+      debug("\nError: Could not find any check process");
     }
   });
 };
@@ -104,7 +106,7 @@ workers.validateCheckData = (originalCheckData) => {
   ) {
     workers.performCheck(originalCheckData);
   } else {
-    console.log(
+    debug(
       `\nA check data (${originalCheckData.id}) is not properly formatted \n\t data: `,
       originalCheckData
     );
@@ -147,8 +149,8 @@ workers.performCheck = function (originalCheckData) {
 
     //update checkout and pass data along
     checkOutcome.responseCode = status;
-    console.log("\n");
-    console.log(originalCheckData.url, checkOutcome);
+    debug("\n");
+    debug(originalCheckData.url, checkOutcome);
 
     if (!outcomeSent) {
       workers.processCheckOutcome(originalCheckData, checkOutcome);
@@ -222,12 +224,12 @@ workers.processCheckOutcome = function (originalCheckData, checkOutcome) {
       if (alertWarranted) {
         workers.alertUserAboutStatusChange(newCheckData);
       } else {
-        console.log(
+        debug(
           `\nCheck status for ${newCheckData.id} => ${newCheckData.url} new has not changed, no alert is needed`
         );
       }
     } else {
-      console.log("\nError trying to save update to one of the check");
+      debug("\nError trying to save update to one of the check");
     }
   });
 };
@@ -239,9 +241,9 @@ workers.alertUserAboutStatusChange = (newCheckData) => {
 
   helpers.sendTwillioSms(newCheckData.userPhone, msg, (err) => {
     if (!err) {
-      console.log("\nUser was alerted, message: ", msg);
+      debug("\nUser was alerted, message: ", msg);
     } else {
-      console.log(
+      debug(
         "\nUnable to send sms to user who had a state change in their check"
       );
     }
@@ -267,9 +269,9 @@ workers.log = (
 
   _logs.append(logFileName, stringLogData, (err) => {
     if (!err) {
-      console.log("\nLog to file successful");
+      debug("\nLog to file successful");
     } else {
-      console.log("\nLog to file failed");
+      debug("\nLog to file failed");
     }
   });
 };
@@ -290,16 +292,16 @@ workers.rotateLogs = function () {
           if (!err) {
             _logs.truncate(logId, (err) => {
               if (!err) {
-                console.log("\n Success truncating log file");
+                debug("\n Success truncating log file");
               } else {
-                console.log("\n Error truncating log file");
+                debug("\n Error truncating log file");
               }
             });
           }
         });
       });
     } else {
-      console.log("Error compressing one of the logs");
+      debug("Error compressing one of the logs");
     }
   });
 };
@@ -311,6 +313,7 @@ workers.startLogRotationLoop = () => {
 };
 
 workers.init = function () {
+  console.log("\x1b[33m%s\x1b[0m", "Workers have started running");
   workers.gatherAllChecks();
   workers.loop();
   //compress all logs immediately

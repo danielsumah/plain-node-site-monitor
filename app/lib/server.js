@@ -7,6 +7,8 @@ const fs = require("fs");
 const path = require("path");
 const handlers = require("./handlers");
 const helpers = require("./helpers");
+const util = require("util");
+const debug = util.debuglog("server");
 
 const server = {};
 
@@ -33,6 +35,7 @@ server.init = function () {
   // start http server
   server.httpServer.listen(config.httpPort, () => {
     console.log(
+      "\x1b[35m%s\x1b[0m",
       `Server connected env: ${config.envName} port : ${config.httpPort}`
     );
   });
@@ -40,6 +43,7 @@ server.init = function () {
   //start https server
   server.httpsServer.listen(config.httpsPort, () => {
     console.log(
+      "\x1b[36m%s\x1b[0m",
       `Server connected env: ${config.envName} port : ${config.httpsPort}`
     );
   });
@@ -47,7 +51,7 @@ server.init = function () {
 
 // handles both http and https logic
 server.unifiedServerLogic = function (req, res) {
-  console.log("A request hit the server");
+  debug("A request hit the server");
   //parse the url
   const parseUrl = url.parse(req.url, true);
   const path = parseUrl.pathname;
@@ -71,7 +75,7 @@ server.unifiedServerLogic = function (req, res) {
     const data = {
       trimmedPath: trimmedPath,
       queryStringObject: requestQuery,
-      method: req.method.toLocaleLowerCase(),
+      method: req.method.toLowerCase(),
       headers: req.headers,
       payload: helpers.parseJsonToObject(buffer),
     };
@@ -88,7 +92,27 @@ server.unifiedServerLogic = function (req, res) {
       res.writeHead(statusCode);
       res.end(stringifiedPayload);
 
-      console.log("Sending response: ", statusCode, stringifiedPayload);
+      if (statusCode == 200 || statusCode == 201 || statusCode == 204) {
+        debug(
+          "\x1b[32m%s\x1b[0m",
+          data.method.toUpperCase() +
+            " /" +
+            trimmedPath +
+            " " +
+            statusCode +
+            " "
+        );
+      } else {
+        debug(
+          "\x1b[31m%s\x1b[0m",
+          data.method.toUpperCase() +
+            " /" +
+            trimmedPath +
+            " " +
+            statusCode +
+            " "
+        );
+      }
     });
   });
 };
