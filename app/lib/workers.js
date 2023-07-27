@@ -4,6 +4,7 @@ const http = require("http");
 const https = require("https");
 const helpers = require("./helpers");
 const url = require("url");
+const _logs = require("./logs");
 
 const workers = {};
 
@@ -202,6 +203,15 @@ workers.processCheckOutcome = function (originalCheckData, checkOutcome) {
       ? true
       : false;
 
+  let timeOfCheck = Date.now();
+  workers.log(
+    originalCheckData,
+    checkOutcome,
+    state,
+    alertWarranted,
+    timeOfCheck
+  );
+
   //update the check data
   let newCheckData = originalCheckData;
   newCheckData.state = state;
@@ -237,6 +247,32 @@ workers.alertUserAboutStatusChange = (newCheckData) => {
     }
   });
 };
+
+workers.log = (
+  originalCheckData,
+  checkOutcome,
+  state,
+  alertWarranted,
+  timeOfCheck
+) => {
+  const logData = {
+    check: originalCheckData,
+    outcome: checkOutcome,
+    state: state,
+    alert: alertWarranted,
+    time: timeOfCheck,
+  };
+  const stringLogData = JSON.stringify(logData);
+  const logFileName = originalCheckData.id;
+
+  _logs.append(logFileName, stringLogData, (err) => {
+    if (!err) {
+      console.log("\nLog to file successful");
+    } else {
+      console.log("\nLog to file failed");
+    }
+  });
+};
 // timer to execute the workers process once per minute
 workers.loop = function () {
   setInterval(() => {
@@ -244,9 +280,43 @@ workers.loop = function () {
   }, 1000 * 5);
 };
 
+workers.rotateLogs = function () {
+  _logs.list(false, (err, logs) => {
+    if (!err && logs && logs.length > 0) {
+      logs.forEach((logName) => {
+        let logId = logName.replace(".log", "");
+        let newFileId = logId + "-" + Date.now();
+        _logs.compress(logId, newFileId, (err) => {
+          if (!err) {
+            _logs.truncate(logId, (err) => {
+              if (!err) {
+                console.log("\n Success truncating log file");
+              } else {
+                console.log("\n Error truncating log file");
+              }
+            });
+          }
+        });
+      });
+    } else {
+      console.log("Error compressing one of the logs");
+    }
+  });
+};
+
+workers.startLogRotationLoop = () => {
+  setInterval(() => {
+    workers.rotateLogs();
+  }, 1000 * 60 * 60 * 24);
+};
+
 workers.init = function () {
   workers.gatherAllChecks();
   workers.loop();
+  //compress all logs immediately
+  workers.rotateLogs();
+  //log rotation loop
+  workers.startLogRotationLoop();
 };
 
 module.exports = workers;
